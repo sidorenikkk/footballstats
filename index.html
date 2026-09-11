@@ -4,13 +4,40 @@
 #syncStatus.err{background:#7a1f1f}
 #syncStatus.ok{background:#14603a}
 #loadingOverlay{position:fixed;inset:0;background:#f7faf8;display:flex;align-items:center;justify-content:center;font-weight:750;color:var(--m);z-index:100}
+.adminBtn{background:transparent;color:#e7efe9;border:1px solid #3a5548;border-radius:9px;padding:8px 13px;font-weight:750;font-size:13px;cursor:pointer;align-self:center}
+.adminBtn.on{background:var(--g);color:#062916;border-color:var(--g)}
+body:not(.is-admin) .admin-only{display:none!important}
+.modalWrap{position:fixed;inset:0;background:#0a1a12b3;display:flex;align-items:center;justify-content:center;z-index:200}
+.modalWrap.hidden{display:none}
+.modalBox{background:#fff;border-radius:16px;padding:24px;width:min(320px,90vw);box-shadow:0 20px 60px #0004}
+.modalBox h3{margin:0 0 6px;font-size:18px}
+.modalBox p{margin:0 0 14px;color:var(--m);font-size:13px}
+.modalBox input{width:100%;margin-bottom:10px}
+.modalRow{display:flex;gap:8px}
+.modalRow button{flex:1}
+.ghost{background:#eef2ef;color:var(--i)}
+.modalErr{color:#a61b1b;font-size:12px;margin:-4px 0 10px;display:none}
 </style></head><body>
 <div id="loadingOverlay">Загрузка данных…</div>
-<header><div class="brand"><i></i>Футбольчик (Вильнюс)</div></header>
+<header><div class="brand"><i></i>Футбольчик (Вильнюс)</div><button class="adminBtn" id="loginBtn">Войти</button></header>
+<div class="modalWrap hidden" id="loginModal">
+  <div class="modalBox">
+    <h3>Вход для администратора</h3>
+    <p>Введите пароль, чтобы редактировать игроков и матчи.</p>
+    <form id="loginForm">
+      <input id="loginPass" type="password" placeholder="Пароль" autocomplete="current-password">
+      <p class="modalErr" id="loginErr">Неверный пароль</p>
+      <div class="modalRow">
+        <button type="button" class="ghost" id="loginCancel">Отмена</button>
+        <button type="submit" class="primary">Войти</button>
+      </div>
+    </form>
+  </div>
+</div>
 <main><nav class="tabs"><button class="tab active" data-v="players">Игроки</button><button class="tab" data-v="draw">Жеребьёвка</button><button class="tab" data-v="matches">Матчи</button><button class="tab" data-v="stats">Статистика</button></nav>
-<section class="view active" id="players"><div class="panel"><form class="add" id="add"><input id="name" required placeholder="Имя игрока"><select id="pos"><option>Полевой</option><option>Вратарь</option></select><input id="rating" type="number" min="1" max="100" value="70"><button class="primary">Добавить</button></form><div id="list"></div></div></section>
+<section class="view active" id="players"><div class="panel"><form class="add admin-only" id="add"><input id="name" required placeholder="Имя игрока"><select id="pos"><option>Полевой</option><option>Вратарь</option></select><input id="rating" type="number" min="1" max="100" value="70"><button class="primary">Добавить</button></form><div id="list"></div></div></section>
 <section class="view" id="draw"><div class="grid"><div class="panel"><h2>Состав</h2><p class="hint">Отметьте игроков, которые сегодня играют.</p><div id="drawList"></div><div class="footer"><span id="count">0 игроков выбрано</span><b>На сегодня</b></div></div><div class="panel"><div class="head"><div><h2>Результат жеребьёвки</h2><p class="hint" id="hint">Выберите состав и сформируйте команды.</p></div><div class="balance" id="balance">—</div></div><div class="teams"><div class="team"><div class="team-top">Зелёные <span class="average" id="aa">—</span></div><div id="a" class="empty">Состав появится здесь</div></div><div class="team b"><div class="team-top">Белые <span class="average" id="ab">—</span></div><div id="b" class="empty">Состав появится здесь</div></div></div><div class="footer"><button class="primary" id="drawBtn">⚖ Сформировать команды</button><b id="gap">—</b></div></div></div></section>
-<section class="view" id="matches"><div class="grid"><div class="panel"><h2>Записать матч</h2><p class="hint">Перед сохранением сформируйте команды — это нужно для статистики побед.</p><form class="form" id="matchForm"><input id="date" type="date" required><input id="sa" type="number" min="0" value="0"><input id="sb" type="number" min="0" value="0"><button class="primary">Сохранить</button></form><p class="hint">Зелёные — Белые</p></div><div class="panel"><h2>История матчей</h2><div id="matchList"></div></div></div></section>
+<section class="view" id="matches"><div class="grid"><div class="panel"><h2>Записать матч</h2><p class="hint">Перед сохранением сформируйте команды — это нужно для статистики побед.</p><form class="form admin-only" id="matchForm"><input id="date" type="date" required><input id="sa" type="number" min="0" value="0"><input id="sb" type="number" min="0" value="0"><button class="primary">Сохранить</button></form><p class="hint">Зелёные — Белые</p></div><div class="panel"><h2>История матчей</h2><div id="matchList"></div></div></div></section>
 <section class="view" id="stats"><div class="stats"><div class="stat"><b id="games">0</b><span>матчей сыграно</span></div><div class="stat"><b id="goals">0</b><span>голов за сезон</span></div></div><div class="panel"><h2>Рейтинг игроков</h2><table class="table"><thead><tr><th>#</th><th>Игрок</th><th>Рейтинг</th><th>Явка</th><th>Победы</th><th>Побед</th></tr></thead><tbody id="ranking"></tbody></table></div></section>
 </main>
 <div id="syncStatus">⏳ подключение…</div>
@@ -21,9 +48,15 @@ const API_BASE = 'https://footballstats-api.onrender.com';
 
 const $=s=>document.querySelector(s);
 let P=[],M=[],T=null;
+let adminPassword=localStorage.getItem('adminPassword')||'';
+let isAdmin=false;
 
 const statusEl=$('#syncStatus');
 function setStatus(text,cls){statusEl.textContent=text;statusEl.className=cls||''}
+
+function authHeaders(){
+  return adminPassword?{'X-Admin-Password':adminPassword}:{};
+}
 
 async function apiGet(path){
   const r=await fetch(API_BASE+path);
@@ -31,17 +64,20 @@ async function apiGet(path){
   return r.json();
 }
 async function apiPost(path,body){
-  const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body)});
+  if(r.status===403){logout();throw new Error('Доступ запрещён — войдите заново')}
   if(!r.ok) throw new Error('POST '+path+' failed: '+r.status);
   return r.status===204?null:r.json();
 }
 async function apiPatch(path,body){
-  const r=await fetch(API_BASE+path,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch(API_BASE+path,{method:'PATCH',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body)});
+  if(r.status===403){logout();throw new Error('Доступ запрещён — войдите заново')}
   if(!r.ok) throw new Error('PATCH '+path+' failed: '+r.status);
   return r.status===204?null:r.json();
 }
 async function apiDelete(path){
-  const r=await fetch(API_BASE+path,{method:'DELETE'});
+  const r=await fetch(API_BASE+path,{method:'DELETE',headers:{...authHeaders()}});
+  if(r.status===403){logout();throw new Error('Доступ запрещён — войдите заново')}
   if(!r.ok) throw new Error('DELETE '+path+' failed: '+r.status);
 }
 
@@ -53,8 +89,8 @@ function ps(x){
 
 function render(){
   let on=P.filter(x=>x.on);
-  $('#list').innerHTML=P.map(x=>`<div class="player ${x.p==='Вратарь'?'keeper':''}"><div class="avatar">${x.p==='Вратарь'?'GK':x.n[0]}</div><span><b>${x.n}</b><div class="role">${x.p}</div></span><input class="rating" data-rate="${x.id}" type="number" min="1" max="100" value="${x.r}"><button class="remove" data-r="${x.id}">×</button></div>`).join('')||'<p class="empty">Добавьте первого игрока.</p>';
-  $('#drawList').innerHTML=P.map(x=>`<label class="draw-player"><input data-on="${x.id}" type="checkbox" ${x.on?'checked':''}><div class="avatar">${x.p==='Вратарь'?'GK':x.n[0]}</div><span><b>${x.n}</b><div class="role">${x.p}</div></span><span class="rating">${x.r}</span></label>`).join('')||'<p class="empty">Добавьте игроков во вкладке «Игроки».</p>';
+  $('#list').innerHTML=P.map(x=>`<div class="player ${x.p==='Вратарь'?'keeper':''}"><div class="avatar">${x.p==='Вратарь'?'GK':x.n[0]}</div><span><b>${x.n}</b><div class="role">${x.p}</div></span>${isAdmin?`<input class="rating" data-rate="${x.id}" type="number" min="1" max="100" value="${x.r}">`:`<span class="rating">${x.r}</span>`}${isAdmin?`<button class="remove" data-r="${x.id}">×</button>`:'<span></span>'}</div>`).join('')||'<p class="empty">Добавьте первого игрока.</p>';
+  $('#drawList').innerHTML=P.map(x=>`<label class="draw-player"><input data-on="${x.id}" type="checkbox" ${x.on?'checked':''} ${isAdmin?'':'disabled'}><div class="avatar">${x.p==='Вратарь'?'GK':x.n[0]}</div><span><b>${x.n}</b><div class="role">${x.p}</div></span><span class="rating">${x.r}</span></label>`).join('')||'<p class="empty">Добавьте игроков во вкладке «Игроки».</p>';
   $('#count').textContent=on.length+' игроков выбрано';
   $('#ranking').innerHTML=[...P].sort((x,y)=>y.r-x.r).map((x,i)=>{let s=ps(x);return`<tr><td>${i+1}</td><td><b>${x.n}</b></td><td><span class="rating">${x.r}</span></td><td>${s.attendance}% <span class="hint">(${s.played.length}/${M.length})</span></td><td>${s.wins}</td><td><b>${s.pct}%</b></td></tr>`}).join('');
   $('#games').textContent=M.length;
@@ -158,12 +194,70 @@ $('#matchForm').onsubmit=async e=>{
   }catch(err){console.error(err);setStatus('⚠ ошибка сохранения','err')}
 };
 
+function applyAdminUI(){
+  document.body.classList.toggle('is-admin',isAdmin);
+  const btn=$('#loginBtn');
+  btn.textContent=isAdmin?'✓ Вы вошли (выйти)':'Войти';
+  btn.classList.toggle('on',isAdmin);
+}
+
+function logout(){
+  isAdmin=false;
+  adminPassword='';
+  localStorage.removeItem('adminPassword');
+  applyAdminUI();
+  render();
+}
+
+async function tryLogin(password){
+  const r=await fetch(API_BASE+'/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+  if(!r.ok) return false;
+  const data=await r.json();
+  if(data.ok){
+    isAdmin=true;
+    adminPassword=password;
+    localStorage.setItem('adminPassword',password);
+    applyAdminUI();
+    render();
+    return true;
+  }
+  return false;
+}
+
+const loginModal=$('#loginModal');
+$('#loginBtn').onclick=()=>{
+  if(isAdmin){logout();return}
+  $('#loginErr').style.display='none';
+  $('#loginPass').value='';
+  loginModal.classList.remove('hidden');
+  $('#loginPass').focus();
+};
+$('#loginCancel').onclick=()=>loginModal.classList.add('hidden');
+loginModal.onclick=e=>{if(e.target===loginModal)loginModal.classList.add('hidden')};
+$('#loginForm').onsubmit=async e=>{
+  e.preventDefault();
+  const pass=$('#loginPass').value;
+  if(!pass) return;
+  const ok=await tryLogin(pass);
+  if(ok){
+    loginModal.classList.add('hidden');
+    setStatus('☁ синхронизировано','ok');
+  }else{
+    $('#loginErr').style.display='block';
+  }
+};
+
 async function init(){
   try{
     setStatus('⏳ загрузка данных…');
     const state=await apiGet('/api/state');
     P=state.players;
     M=state.matches;
+    if(adminPassword){
+      const ok=await tryLogin(adminPassword).catch(()=>false);
+      if(!ok){adminPassword='';localStorage.removeItem('adminPassword')}
+    }
+    applyAdminUI();
     render();
     setStatus('☁ синхронизировано','ok');
   }catch(err){
